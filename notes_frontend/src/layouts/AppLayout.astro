@@ -1,0 +1,106 @@
+---
+import '../styles/theme.css';
+const { title = 'Notes' } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} • Simple Notes</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="container">
+      <aside class="sidebar" aria-label="Sidebar Navigation">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">📝</div>
+          <div>
+            <h1>Simple Notes</h1>
+            <p class="tagline">Capture ideas instantly</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/" aria-current={Astro.url.pathname === '/' ? 'page' : undefined}>
+            All Notes
+          </a>
+          <a href="/new" aria-current={Astro.url.pathname.startsWith('/new') ? 'page' : undefined}>
+            New Note
+          </a>
+        </nav>
+        <footer class="sidebar-footer">
+          <small>Ready for backend integration</small>
+        </footer>
+      </aside>
+
+      <header class="header">
+        <form action="/" method="get" class="search" role="search" aria-label="Search notes">
+          <input
+            type="search"
+            name="q"
+            placeholder="Search notes..."
+            aria-label="Search notes"
+            value={Astro.url.searchParams.get('q') || ''}
+          />
+          <button type="submit" class="primary">Search</button>
+          <a class="ghost" href="/">Clear</a>
+          <a class="accent" href="/new" aria-label="Create new note">+ New</a>
+        </form>
+      </header>
+
+      <main class="main">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+.brand {
+  display: flex; align-items: center; gap: 12px; padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.brand h1 { font-size: 1.15rem; margin: 0; }
+.brand .tagline { margin: 2px 0 0; color: var(--muted); font-size: .85rem; }
+
+.sidebar {
+  position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--card), transparent 120%);
+}
+.nav { display: grid; padding: 14px; gap: 8px; }
+.nav a {
+  padding: 10px 12px; border-radius: 10px; color: var(--text);
+  border: 1px solid transparent;
+}
+.nav a[aria-current="page"], .nav a:hover {
+  background: var(--card-hover); border-color: var(--border);
+}
+
+.sidebar-footer { margin-top: auto; padding: 16px; color: var(--muted); border-top: 1px solid var(--border); }
+
+.header {
+  display: flex; align-items: center; padding: 14px; gap: 10px;
+  position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.search { display: flex; gap: 8px; width: 100%; }
+.search input[type="search"] { flex: 1; padding: 10px 12px; }
+
+button, .primary, .ghost, .accent {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text);
+}
+.primary { background: var(--color-primary); color: white; border-color: transparent; }
+.accent { background: var(--color-accent); color: #111827; border-color: transparent; }
+.ghost { background: transparent; }
+
+.main { padding: 18px; }
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+}
+</style>

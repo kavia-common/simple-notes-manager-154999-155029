@@ -1,0 +1,89 @@
+---
+import AppLayout from '../../../layouts/AppLayout.astro';
+export async function getStaticPaths() {
+  return [];
+}
+const { id } = Astro.params;
+---
+<AppLayout title="Edit Note">
+  <section class="sheet" data-id={id}>
+    <header class="sheet-header">
+      <h2>Edit note</h2>
+      <a class="ghost" href={`/notes/${id}`}>Cancel</a>
+    </header>
+
+    <form id="edit-form" class="note-form">
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" name="title" required placeholder="Note title" />
+      </div>
+
+      <div class="field">
+        <label for="content">Content</label>
+        <textarea id="content" name="content" rows="12" placeholder="Write your note..." required></textarea>
+      </div>
+
+      <div class="field">
+        <label for="tags">Tags (comma separated)</label>
+        <input id="tags" name="tags" placeholder="work, idea, todo" />
+      </div>
+
+      <div class="actions">
+        <a class="ghost" href={`/notes/${id}`}>Back</a>
+        <button type="submit" class="primary">Save Changes</button>
+      </div>
+    </form>
+    <div id="status" role="status" class="muted" aria-live="polite"></div>
+  </section>
+</AppLayout>
+
+<script>
+  import { getNote, updateNote } from '../../../services/notesApi';
+
+  const id = document.currentScript?.ownerDocument?.querySelector('section.sheet')?.getAttribute('data-id') || '';
+  const form = document.getElementById('edit-form');
+  const status = document.getElementById('status');
+
+  async function load() {
+    try {
+      const n = await getNote(id);
+      (document.getElementById('title')).value = n.title || '';
+      (document.getElementById('content')).value = n.content || '';
+      (document.getElementById('tags')).value = (n.tags || []).join(', ');
+    } catch (e) {
+      status.textContent = `Failed to load note: ${e instanceof Error ? e.message : ''}`;
+    }
+  }
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.textContent = 'Saving...';
+    try {
+      const fd = new FormData(form);
+      const title = (fd.get('title') || '').toString().trim();
+      const content = (fd.get('content') || '').toString().trim();
+      const tagsRaw = (fd.get('tags') || '').toString();
+      const tags = tagsRaw.split(',').map(s => s.trim()).filter(Boolean);
+      await updateNote(id, { title, content, tags });
+      status.textContent = 'Saved.';
+      window.location.href = `/notes/${encodeURIComponent(id)}`;
+    } catch (err) {
+      status.textContent = `Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`;
+    }
+  });
+
+  load();
+</script>
+
+<style>
+.sheet { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.sheet-header { display:flex; align-items:center; justify-content: space-between; margin-bottom: 10px; }
+.note-form { display: grid; gap: 12px; }
+.field { display: grid; gap: 6px; }
+label { font-weight: 600; }
+input, textarea { padding: 10px 12px; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+.muted { color: var(--muted); }
+.primary { background: var(--color-primary); color: white; border-color: transparent; padding: 10px 12px; border-radius: 10px; }
+.ghost { background: transparent; border: 1px solid var(--border); padding: 10px 12px; border-radius: 10px; }
+</style>

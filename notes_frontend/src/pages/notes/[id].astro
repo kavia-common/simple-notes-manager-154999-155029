@@ -1,0 +1,83 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+export async function getStaticPaths() {
+  // Build-time: we don't pre-render any specific note pages.
+  return [];
+}
+const { id } = Astro.params;
+---
+<AppLayout title="Note">
+  <article class="sheet" id="note-view" data-id={id}>
+    <div class="sheet-header">
+      <h2 id="note-title" class="title">Loading…</h2>
+      <div class="actions">
+        <a class="ghost" href="/">Back</a>
+        <a class="primary" href={`/notes/${id}/edit`}>Edit</a>
+        <button class="danger" id="delete-btn">Delete</button>
+      </div>
+    </div>
+    <div class="meta">
+      <span id="updated">Updated: —</span>
+      <div id="tags" class="tags"></div>
+    </div>
+    <div id="content" class="content">Please wait…</div>
+  </article>
+</AppLayout>
+
+<script>
+  import { getNote, deleteNote } from '../../services/notesApi';
+
+  const root = document.getElementById('note-view');
+  const id = root?.getAttribute('data-id') || '';
+  const titleEl = document.getElementById('note-title');
+  const contentEl = document.getElementById('content');
+  const updatedEl = document.getElementById('updated');
+  const tagsEl = document.getElementById('tags');
+  const delBtn = document.getElementById('delete-btn');
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#039;'}[c]));
+  }
+
+  async function load() {
+    try {
+      const n = await getNote(id);
+      if (titleEl) titleEl.textContent = n.title || 'Untitled';
+      if (contentEl) contentEl.textContent = n.content || '';
+      if (updatedEl) updatedEl.textContent = `Updated: ${new Date(n.updated_at || n.created_at).toLocaleString()}`;
+      if (tagsEl) tagsEl.innerHTML = (n.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+      document.title = `${n.title || 'Note'} • Simple Notes`;
+    } catch (e) {
+      if (contentEl) contentEl.innerHTML = `<div class="error">Failed to load note. ${e instanceof Error ? e.message : ''}</div>`;
+    }
+  }
+
+  delBtn?.addEventListener('click', async () => {
+    if (!confirm('Delete this note? This cannot be undone.')) return;
+    delBtn.setAttribute('disabled', 'true');
+    try {
+      await deleteNote(id);
+      window.location.href = '/';
+    } catch (e) {
+      alert(`Failed to delete: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      delBtn.removeAttribute('disabled');
+    }
+  });
+
+  load();
+</script>
+
+<style>
+.sheet { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.sheet-header { display:flex; align-items:center; justify-content: space-between; gap: 10px; }
+.title { margin: 0; }
+.actions { display: flex; gap: 8px; }
+.primary { background: var(--color-primary); color: white; border-color: transparent; padding: 8px 12px; border-radius: 10px; }
+.ghost { background: transparent; border: 1px solid var(--border); padding: 8px 12px; border-radius: 10px; }
+.danger { background: #ef4444; color: white; border: 1px solid transparent; padding: 8px 12px; border-radius: 10px; }
+.meta { display:flex; align-items:center; justify-content: space-between; color: var(--muted); margin: 10px 0 6px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { padding: 2px 8px; font-size: 12px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.content { white-space: pre-wrap; line-height: 1.6; }
+.error { color: #b91c1c; }
+</style>

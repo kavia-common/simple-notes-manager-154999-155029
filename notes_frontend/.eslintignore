@@ -1,0 +1,2 @@
+# Ignore Astro generated types that can violate strict TS rules
+.astro/
